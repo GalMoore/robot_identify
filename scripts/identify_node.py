@@ -19,7 +19,9 @@ home = expanduser("~") + "/"
 class image_converter:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("identified_people_in_stream",Image)
+    self.image_pub = rospy.Publisher("identified_people_video",Image)
+    # will publish either: 1. no face found = empty string 2. "unknown face found" 3. name of person 
+    self.who_can_see_now = rospy.Publisher('/identified_people_string_name', String, queue_size=1)
 
     self.bridge = CvBridge()
     # subscribes to input video from video_stream_opencv that is running
@@ -72,14 +74,17 @@ class image_converter:
     if self.process_this_frame:
         # Find all the faces and face encodings in the current frame of video
         self.face_locations = face_recognition.face_locations(rgb_small_frame)
-        # print("face locations",face_locations)
         self.face_encodings = face_recognition.face_encodings(rgb_small_frame, self.face_locations)
+
+        # if no faces found publish that there is no name
+        if(len(self.face_locations)==0):
+          self.who_can_see_now.publish("")
 
         self.face_names = []
         for face_encoding in self.face_encodings:
             # See if the face is a match for the known face(s)
             matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
-            name = "Unknown"
+            name = "Unknown face detected"
 
             # # If a match was found in known_face_encodings, just use the first one.
             if True in matches:
@@ -104,6 +109,10 @@ class image_converter:
         right *= 4
         bottom *= 4
         left *= 4
+        # print("top",top)
+        # print("right",right)
+        # print("bottom",bottom)
+        # print("left",left)
 
         # Draw a box around the face
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
@@ -112,6 +121,8 @@ class image_converter:
         cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
         font = cv2.FONT_HERSHEY_DUPLEX
         cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+        # if known person found publish name to topic
+        self.who_can_see_now.publish(name)
 
 
     # we create here our own window for debug
@@ -128,7 +139,7 @@ class image_converter:
 def main(args):
   ic = image_converter()
   # rospy.init_node('image_converter', anonymous=True)
-  rospy.init_node('robot_identify', anonymous=True)
+  rospy.init_node('robot_identify', anonymous=False)
 
   try:
     rospy.spin()
