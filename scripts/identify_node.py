@@ -19,13 +19,13 @@ home = expanduser("~") + "/"
 class image_converter:
 
   def __init__(self):
-    self.image_pub = rospy.Publisher("identified_people_video",Image)
+    self.image_pub = rospy.Publisher("identified_people_video",Image,queue_size=10)
     # will publish either: 1. no face found = empty string 2. "unknown face found" 3. name of person 
-    self.who_can_see_now = rospy.Publisher('/identified_people_string_name', String, queue_size=1)
+    self.who_can_see_now = rospy.Publisher('/identified_people_string_name', String, queue_size=10)
 
     self.bridge = CvBridge()
     # subscribes to input video from video_stream_opencv that is running
-    self.image_sub = rospy.Subscriber("/camera/color/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/camera/image_raw",Image,self.callback,queue_size=10)
     self.process_this_frame = True
 
     ## THIS IS THE BIT IN CHARGE OF BUILDING UP DATABASE OF FACE EMBEDDINGS AND NAMES
