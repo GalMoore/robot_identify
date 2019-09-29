@@ -9,10 +9,8 @@ import cv2
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
-
 import face_recognition
 import numpy as np
-
 from os.path import expanduser
 home = expanduser("~") + "/"
 
@@ -22,20 +20,17 @@ class image_converter:
     self.image_pub = rospy.Publisher("identified_people_video",Image,queue_size=10)
     # will publish either: 1. no face found = empty string 2. "unknown face found" 3. name of person 
     self.who_can_see_now = rospy.Publisher('/identified_people_string_name', String, queue_size=10)
-
     self.bridge = CvBridge()
     # subscribes to input video from video_stream_opencv that is running
     self.image_sub = rospy.Subscriber("/camera/image_raw",Image,self.callback,queue_size=10)
     self.process_this_frame = True
 
-    ## THIS IS THE BIT IN CHARGE OF BUILDING UP DATABASE OF FACE EMBEDDINGS AND NAMES
-    # Load a sample picture and learn how to recognize it.
-
+    ## BUILD UP DATABASE OF FACE EMBEDDINGS AND NAMES
+    # Load a sample picture 
     Gal_path = home + "catkin_ws/src/robot_identify/faces/gal.jpg"
     Gal_image = face_recognition.load_image_file(Gal_path)
     Gal_face_encoding = face_recognition.face_encodings(Gal_image)[0]
-
-    # Load a second sample picture and learn how to recognize it.
+    # Load a second sample picture 
     biden_path = home + "catkin_ws/src/robot_identify/faces/biden.jpg"
     biden_image = face_recognition.load_image_file(biden_path)
     biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
@@ -51,11 +46,9 @@ class image_converter:
     ]
     ##################################################################################
 
-    # Initialize some variables
     self.face_locations = []
     self.face_encodings = []
     self.face_names = []
-
 
   def callback(self,data):
 
@@ -65,8 +58,7 @@ class image_converter:
       print(e)
 
     frame = cv_image
-    # Resize frame of video to 1/4 size for faster face recognition processing
-    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
+    small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25) # Resize frame of video to 1/4 size
     # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
     rgb_small_frame = small_frame[:, :, ::-1]
 
@@ -101,7 +93,6 @@ class image_converter:
 
     self.process_this_frame = not self.process_this_frame
 
-
     # Display the results
     for (top, right, bottom, left), name in zip(self.face_locations, self.face_names):
         # Scale back up face locations since the frame we detected in was scaled to 1/4 size
@@ -109,14 +100,9 @@ class image_converter:
         right *= 4
         bottom *= 4
         left *= 4
-        # print("top",top)
-        # print("right",right)
-        # print("bottom",bottom)
-        # print("left",left)
 
         # Draw a box around the face
         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
         # Draw a label with a name below the face
         cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
         font = cv2.FONT_HERSHEY_DUPLEX
@@ -124,8 +110,7 @@ class image_converter:
         # if known person found publish name to topic
         self.who_can_see_now.publish(name)
 
-
-    # we create here our own window for debug
+    # window for debug
     cv2.imshow("Image window", cv_image)
     cv2.waitKey(3)
 
@@ -134,11 +119,8 @@ class image_converter:
     except CvBridgeError as e:
       print(e)
 
-
-
 def main(args):
   ic = image_converter()
-  # rospy.init_node('image_converter', anonymous=True)
   rospy.init_node('robot_identify', anonymous=False)
 
   try:
@@ -146,8 +128,6 @@ def main(args):
   except KeyboardInterrupt:
     print("Shutting down")
   cv2.destroyAllWindows()
-
-
 
 if __name__ == '__main__':
     main(sys.argv)
