@@ -18,31 +18,48 @@ class image_converter:
 
   def __init__(self):
     self.image_pub = rospy.Publisher("identified_people_video",Image,queue_size=10)
-    # will publish either: 1. no face found = empty string 2. "unknown face found" 3. name of person 
+    # will publish either: 1. no face found = empty string 2. "unknown" 3. name of person 
     self.who_can_see_now = rospy.Publisher('/identified_people_string_name', String, queue_size=10)
     self.bridge = CvBridge()
     # subscribes to input video from video_stream_opencv that is running
     self.image_sub = rospy.Subscriber("/camera/image_raw",Image,self.callback,queue_size=10)
     self.process_this_frame = True
 
-    ## BUILD UP DATABASE OF FACE EMBEDDINGS AND NAMES
-    # Load a sample picture 
+    ## BUILD UP DATABASE OF FACE EMBEDDINGS AND NAMES ###############################
     Gal_path = home + "catkin_ws/src/robot_identify/faces/gal.jpg"
     Gal_image = face_recognition.load_image_file(Gal_path)
     Gal_face_encoding = face_recognition.face_encodings(Gal_image)[0]
-    # Load a second sample picture 
     biden_path = home + "catkin_ws/src/robot_identify/faces/biden.jpg"
     biden_image = face_recognition.load_image_file(biden_path)
     biden_face_encoding = face_recognition.face_encodings(biden_image)[0]
-
+    yaeli_path = home + "catkin_ws/src/robot_identify/faces/yaeli.jpg"
+    yaeli_image = face_recognition.load_image_file(yaeli_path)
+    yaeli_face_encoding = face_recognition.face_encodings(yaeli_image)[0]
+    coral_path = home + "catkin_ws/src/robot_identify/faces/coral.jpg"
+    coral_image = face_recognition.load_image_file(coral_path)
+    coral_face_encoding = face_recognition.face_encodings(coral_image)[0]
+    yona_path = home + "catkin_ws/src/robot_identify/faces/yona.jpg"
+    yona_image = face_recognition.load_image_file(yona_path)
+    yona_face_encoding = face_recognition.face_encodings(yona_image)[0]
+    zeev_path = home + "catkin_ws/src/robot_identify/faces/zeev.jpg"
+    zeev_image = face_recognition.load_image_file(zeev_path)
+    zeev_face_encoding = face_recognition.face_encodings(zeev_image)[0]
     # Create arrays of known face encodings and their names
     self.known_face_encodings = [
         Gal_face_encoding,
-        biden_face_encoding
+        biden_face_encoding,
+        yaeli_face_encoding,
+        coral_face_encoding,
+        yona_face_encoding,
+        zeev_face_encoding
     ]
     self.known_face_names = [
         "Gal Moore",
-        "Joe Biden"
+        "Joe Biden",
+        "yaeli",
+        "coral",
+        "yona",
+        "zeev"
     ]
     ##################################################################################
 
@@ -76,7 +93,7 @@ class image_converter:
         for face_encoding in self.face_encodings:
             # See if the face is a match for the known face(s)
             matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
-            name = "Unknown face detected"
+            name = "Unknown"
 
             # # If a match was found in known_face_encodings, just use the first one.
             if True in matches:
